@@ -1,0 +1,36 @@
+averages = df.groupby('region')['sales'].mean()
+print(averages)
+
+df['YEAR'] = df.DATE.dt.year
+df['MONTH'] = df.DATE.dt.month
+
+currentDateTime = datetime.datetime.now()
+date = currentDateTime.date()
+year = date.strftime("%Y")
+print(f"Current Year -> {year}")
+
+#convert start_date to DateTime format
+df['start_date'] = pd.to_datetime(df['start_date'])
+
+
+#Query to get the sales, customer info, and product details
+query = """select a.order_purchase_timestamp,
+                  c.product_id,
+                  c.order_id,
+                  d.product_category_name_english,
+                  b.customer_unique_id,
+                  b.customer_zip_code_prefix,
+                  b.customer_state,
+                  b.customer_city,
+                  sum(c.price) as sales,
+                  count(distinct c.order_id) as item_qty
+            from orders a         
+            left join orders_items c on a.order_id = c.order_id  
+            inner join customers b on a.customer_id = b.customer_id
+            left join products p on c.product_id=p.product_id
+            left join product_name_eng d on p.product_category_name=d.product_category_name
+            group by 1,2,3,4,5,6,7,8
+            having item_qty >0"""
+
+olist_data = psql.sqldf(query)
+olist_data.head()
